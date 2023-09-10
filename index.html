@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>고양이 가라사대</title>
+  </head>
+  <style>
+    body {
+      text-align: center;
+    }
+    .main-card button {
+      position: relative;
+      left: -45px;
+      bottom: 15px;
+    }
+    .favorites {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+  </style>
+  <body>
+    <!-- 여기다가그려 -->
+    <div id="app"></div>
+
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+      console.log("야옹");
+
+      // 위의 메소드를 하나의 객체에 넣기
+      const jsonLocalStorage = {
+        setItem: (key, value) => {
+          return localStorage.setItem(key, JSON.stringify(value));
+        },
+        getItem: (key) => {
+          return JSON.parse(localStorage.getItem(key));
+        },
+      };
+
+      function CatItem(props) {
+        return (
+          <li>
+            {props.title}
+            <img
+              src={props.img}
+              style={{ width: "150px", border: "1px solid react-dom" }}
+            />
+          </li>
+        );
+      }
+      //  컴포넌트를 쓰려면 그냥 태그방식으로 쓰면 된다.
+      function Favorites({ cats }) {
+        const catList = cats.map((cat, index) => {
+          console.log(index);
+          return <CatItem key={index} img={cat} />;
+        });
+
+        return <ul className="favorites">{catList}</ul>;
+      }
+
+      const MainCard = ({ img, onHeartClick, likeHeart }) => {
+        return (
+          <div className="main-card" style={{ border: "1px solid red" }}>
+            <img src={img} alt="고양이" width="400" />
+            <button onClick={onHeartClick}>{likeHeart}</button>
+          </div>
+        );
+      };
+
+      const Title = (props) => {
+        console.log(props);
+
+        return <h1>{props.children}</h1>;
+      };
+
+      const Form = ({ updateMainCat }) => {
+        // 필드
+        // 한글검증
+        const includesHangul = (text) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/i.test(text);
+        // console.log(handleFormSubmit); //undefined
+        // 소문자를 대분자로 바꿔준다.
+        // 상태를 생성한다.
+        const [value, setValue] = React.useState("");
+        const [errorMessage, setErrorMessage] = React.useState("");
+
+        const handleInputChange = (event) => {
+          // 입력값을 대문자로 바꾸기
+          // console.log(event.target.value.toUpperCase());
+          const userValue = event.target.value.toUpperCase();
+          console.log(includesHangul(userValue));
+          // 검증 전 초기화하기
+          setErrorMessage("");
+          if (includesHangul(userValue)) {
+            setErrorMessage("한글은 입력할 수 없습니다.");
+          }
+          setValue(userValue);
+        };
+
+        function handleFormSubmit(event) {
+          event.preventDefault();
+          console.log("form default 금지");
+
+          // 검증을 하기전에 초기화를 해준다.
+          setErrorMessage("");
+          if (value === "") {
+            setErrorMessage("빈 값으로 만들 수 없습니다.");
+            return;
+          }
+
+          updateMainCat();
+        }
+
+        return (
+          <form onSubmit={handleFormSubmit}>
+            <input
+              type="text"
+              name="name"
+              placeholder="영어 대사를 입력해주세요"
+              value={value}
+              onChange={handleInputChange}
+            />
+            <button type="submit">생성</button>
+            <p style={{ color: "red" }}>{errorMessage}</p>
+          </form>
+        );
+      };
+
+      const App = () => {
+        // 이미지 필드
+        const CAT1 = "https://cataas.com/cat/HSENVDU4ZMqy7KQ0/says/react";
+        const CAT2 = "https://cataas.com/cat/BxqL2EjFmtxDkAm2/says/inflearn";
+        const CAT3 = "https://cataas.com/cat/18MD6byVC1yKGpXp/says/JavaScript";
+        // 이미지 list
+        const catList = [CAT1, CAT2, CAT3];
+        // 상태를 자식 컴포넌트에서 같이 사용하기
+        const [counter, setCounter] = React.useState(
+          jsonLocalStorage.getItem("counter")
+        );
+        const [image, setImage] = React.useState(CAT1);
+        // MainCard에서 사용한다.
+        const [likeHeart, setLikeHeart] = React.useState("🤍");
+        // Favorites에서 사용한다.
+        const [cats, setCats] = React.useState(
+          jsonLocalStorage.getItem("cats") || []
+        );
+
+        console.log("카운터", counter);
+
+        const updateMainCat = (event) => {
+          setCounter(counter + 1);
+          // 이미지 바꾸기
+          setImage(CAT2);
+          const nextCounter = counter + 1;
+          jsonLocalStorage.setItem("counter", nextCounter);
+        };
+
+        // MainCard 컴포넌트의 하트를 클릭했을 때
+        function handleHeartClick() {
+          setLikeHeart("❤️");
+          // Favorites 카드에 좋아요클릭한 카드가 추가된다.
+          // MainCard에 있는 이미지를 받아온다.
+          const newCats = [image, ...cats];
+          setCats([image, ...cats]);
+          // cats를 localStorage에 저정하기
+          jsonLocalStorage.setItem("cats", newCats);
+        }
+
+        return (
+          <div>
+            <Title>{counter}고양이 가라사대 1</Title>
+            <Title>두번째 고양이 가라사대</Title>
+            <Form updateMainCat={updateMainCat} />
+            <MainCard
+              img={image}
+              onHeartClick={handleHeartClick}
+              likeHeart={likeHeart}
+            />
+            <Favorites cats={cats} />
+          </div>
+        );
+      };
+
+      // app 찾기
+      const 여기다가그려 = document.querySelector("#app");
+
+      // ReactDOM.render(catItem, 여기다가그려);// 리엑트 17이하
+      ReactDOM.createRoot(여기다가그려).render(<App />); // 리엑트 18이상
+
+      // 좋아요를 클릭하면 하트 색깔이 붉은색으로 바뀐다.
+      // 좋아요 번튼 찾기
+      // const likeButton = document.querySelector(".main-card button");
+
+      // console.log(likeButton);
+      // // 좋아요 버튼 눌렀을 때 이벤트
+      // likeButton.addEventListener("click", () => {
+      //   likeButton.innerHTML = "❤️";
+
+      //   // 좋아요 리스트에 좋아요 클릭한 사진이 보인다.
+      //   // favorites 찾기
+      //   const favorites = document.querySelector(".favorites");
+      //   // 새로운 이미지 사진 만들기
+      //   const newFavoriteImage = document.createElement("img");
+      //   // 이미지에 src 주소 알려주기
+      //   newFavoriteImage.src = "";
+      //   newFavoriteImage.alt = "내가 좋아하는 고양이 사진";
+
+      //   // li를 추가하기
+      //   const li = document.createElement("li");
+      //   // li안에 image 추가하기
+      //   li.appendChild(newFavoriteImage);
+      //   // li를 favorites 아래에 추가하기
+      //   favorites.appendChild(li);
+      // });
+    </script>
+  </body>
+</html>
